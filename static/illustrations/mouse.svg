@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Illustrated mouse">
+ <defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e5e9df"/><stop offset="1" stop-color="#d3ddd5"/></linearGradient>
+ <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f9f9f2"/><stop offset=".55" stop-color="#d6ded8"/><stop offset="1" stop-color="#9cad9f"/></linearGradient>
+ <linearGradient id="dark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#496157"/><stop offset=".5" stop-color="#263e34"/><stop offset="1" stop-color="#142a25"/></linearGradient>
+ <linearGradient id="fabric" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5e7868"/><stop offset=".6" stop-color="#3b5549"/><stop offset="1" stop-color="#263e35"/></linearGradient>
+ <linearGradient id="sand" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f5e4c7"/><stop offset="1" stop-color="#cdb08c"/></linearGradient>
+ <filter id="shadow"><feDropShadow dx="0" dy="22" stdDeviation="23" flood-color="#1b3b30" flood-opacity=".22"/></filter>
+ </defs>
+ <rect width="800" height="800" fill="url(#bg)"/><circle cx="400" cy="400" r="293" fill="#ffffff" opacity=".12"/><circle cx="400" cy="400" r="246" fill="none" stroke="#ffffff" opacity=".32" stroke-width="2"/><ellipse cx="404" cy="656" rx="235" ry="38" fill="#17372b" opacity=".12"/><g filter="url(#shadow)"><ellipse cx="401" cy="594" rx="174" ry="43" fill="#153a3333"/><path d="M238 430 C238 310 300 248 400 248 C502 248 565 310 565 430 C565 557 506 608 401 608 C296 608 238 555 238 430Z" fill="url(#metal)" stroke="#e5e7e0" stroke-width="5"/><path d="M401 248 V400" stroke="#a9b4ad" stroke-width="7"/><rect x="388" y="316" width="25" height="70" rx="12" fill="#72877f"/><path d="M262 473 C294 566 501 589 540 481" fill="none" stroke="#bccbc2" stroke-width="6" opacity=".5"/></g><text x="47" y="750" font-family="Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="5" fill="#314c42" opacity=".65">ONLINE SHOP / STUDIO OBJECTS</text><text x="745" y="750" text-anchor="end" font-family="Arial" font-size="17" fill="#314c42" opacity=".65">✳</text></svg>

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#111e1b">
+  <meta name="description" content="Online Shop — a modern interactive e-commerce demonstration built with FastAPI.">
+  <title>{% block title %}ONLINE SHOP{% endblock %} · Online Shopping System</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/visual-upgrade.css">
+</head>
+<body>
+<div class="site">
+  <div class="announcement"><span class="announcement-spark">✳</span> THE EVERYDAY EDIT <span class="announcement-divider">/</span> A CONCEPT STORE FOR GOOD THINGS <span class="announcement-right">CLASSROOM DEMO — NO REAL PAYMENTS</span></div>
+  <header class="topbar"><div class="container navwrap">
+    <a href="/" class="brand" aria-label="Online Shop homepage"><span class="brandmark">OS<span class="brandmark-dot">.</span></span><span>ONLINE<span class="brandlight">SHOP</span></span></a>
+    <nav class="navlinks" aria-label="Main navigation"><a href="/">Discover</a><a href="/#catalog">Collection</a>{% if user and user.role == 'customer' %}<a href="/cart">Cart</a><a href="/orders">My orders</a>{% endif %}{% if user and user.role == 'admin' %}<a href="/admin">Dashboard</a><a href="/admin/products">Products</a><a href="/admin/orders">Orders</a>{% endif %}</nav>
+    <div class="account">{% if user %}<span class="greet">Hi, {{ user.name }}</span><form method="post" action="/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit" class="btn btn-outline btn-small">Sign out</button></form>{% else %}<a class="btn btn-outline btn-small" href="/login">Sign in</a><a class="btn btn-dark btn-small" href="/register">Join now <span aria-hidden="true">↗</span></a>{% endif %}</div>
+  </div></header>
+  <main class="container main">{% if notice %}<div class="flash success" role="status">{{ notice }}</div>{% endif %}{% if error %}<div class="flash error" role="alert">{{ error }}</div>{% endif %}{% block content %}{% endblock %}</main>
+  <footer class="footer"><div class="container footinner"><div class="footer-brand">ONLINE<span>SHOP</span><small>Thoughtful things for everyday living.</small></div><span>Educational concept store · Simulated Cash on Delivery only · No online payments</span><a href="/#catalog" class="footer-back">Back to collection ↑</a></div></footer>
+</div>
+<script src="/static/cart-live.js" defer></script>
+<script src="/static/showroom.js" defer></script>
+</body></html>

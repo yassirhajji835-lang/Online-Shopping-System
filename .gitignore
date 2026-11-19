@@ -1,0 +1,7 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+shop.sqlite3
+.session_secret
+.env
+*.log

@@ -1,0 +1,41 @@
+ONLINE SHOPPING SYSTEM — START HERE
+===================================
+
+REQUIREMENTS
+  Python 3.10+ and an internet connection for the first-time package install.
+
+RUN
+  1. Open a terminal inside this folder.
+  2. Enter: python -m pip install -r requirements.txt
+  3. Enter: python app.py
+  4. Open: http://127.0.0.1:8000
+
+DEMO ACCOUNTS
+  Administrator: admin@demo.shop
+  Password:      DemoAdmin123!
+  Customer:      Use Register in the website to create a new account.
+
+IMPORTANT
+  This local teaching demo DOES NOT process real payments or ship orders.
+  Keep default credentials for offline/classroom demo only.
+  Set SHOP_ADMIN_EMAIL and SHOP_ADMIN_PASSWORD before first run to customize.
+
+TEST
+  python -m pytest -q
+
+DOCS
+  docs/Week1_Online_Shopping_System_Requirements_Aligned.docx
+  docs/Online_Shopping_System_Final_Presentation_DRAFT.pptx
+  docs/PROJECT_PLAN.md
+  docs/ARCHITECTURE.md
+  docs/TEST_REPORT.md
+  docs/PRESENTATION_SCRIPT.md
+  docs/SUBMISSION_CHECKLIST.md
+
+DEADLINES
+  November 20: Week 1 electronic report
+  November 27: Week 2 electronic report / proposed early code freeze
+  December 4: Week 3 electronic report
+  December 11: final in-person presentation + 3 printed lab reports
+
+Only the teacher can confirm the exact Week 2 / Week 3 report contents.

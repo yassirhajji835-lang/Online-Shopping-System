@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Discover the everyday edit{% endblock %}
+{% block content %}
+<section class="hero hero-v2" aria-label="Featured collection">
+  <div class="hero-copy">
+    <div class="hero-kicker"><span class="signal-dot"></span> THE EVERYDAY EDIT <span class="hero-edition">/ 2026</span></div>
+    <h1>Good things.<br><em>Better days.</em></h1>
+    <p>A curated little universe of everyday essentials. Discover your next favorite, explore the details, and make it yours.</p>
+    <div class="hero-cta"><a href="#catalog" class="btn btn-lime">Explore the collection <span aria-hidden="true">↗</span></a><span class="hero-caption">DESIGNED TO BE DISCOVERED<br>BUILT TO BE ENJOYED</span></div>
+    <div class="hero-bottom"><span>01 / 03</span><span class="hero-line"></span><span>OBJECTS WITH PERSONALITY</span></div>
+  </div>
+  <div class="hero-stage" data-hero-stage aria-label="Floating product photographs">
+    <div class="hero-gridline" aria-hidden="true"></div>
+    <div class="hero-halo" aria-hidden="true"></div>
+    <div class="hero-orbit hero-orbit-one" aria-hidden="true"></div>
+    <div class="hero-orbit hero-orbit-two" aria-hidden="true"></div>
+    <div class="hero-float hero-float-primary" data-depth="14">
+      <img class="hero-photo" data-remote-photo src="{{hero_photos['headphones'][0]}}" alt="Black headphones on a yellow studio background" loading="eager" fetchpriority="high">
+      <div class="hero-photo-fallback"><img src="/static/illustrations/headphones.svg" alt=""></div>
+      <div class="float-label"><span>THE SOUND EDIT</span><b>01</b></div>
+    </div>
+    <div class="hero-float hero-float-secondary" data-depth="-10">
+      <img class="hero-photo" data-remote-photo src="{{hero_photos['mouse'][0]}}" alt="Minimal white wireless mouse" loading="eager">
+      <div class="hero-photo-fallback"><img src="/static/illustrations/mouse.svg" alt=""></div>
+      <div class="float-label"><span>THE DESK EDIT</span><b>02</b></div>
+    </div>
+    <div class="hero-star" aria-hidden="true">✳</div>
+    <div class="hero-stage-caption">A LITTLE DIFFERENT.<br>A LOT MORE YOU.</div>
+  </div>
+</section>
+<div class="trust-strip" aria-label="Store highlights"><span><i>✳</i> CURATED ESSENTIALS</span><span><i>◇</i> EASY TO EXPLORE</span><span><i>✦</i> INTERACTIVE EXPERIENCE</span><span><i>↗</i> MADE FOR THE EVERYDAY</span></div>
+<div class="sectiontitle" id="catalog"><div><div class="eyebrow muted">01 / EXPLORE THE COLLECTION</div><h2>Find your <em>kind of thing.</em></h2><p class="section-subtitle">The little things that make every day feel different. <span>{{count}} products</span></p></div><span class="collection-stamp">CURATED<br>WITH CARE <span>✳</span></span></div>
+<form method="get" action="/" class="filters" role="search"><label><span class="sr-only">Search products</span><input name="q" value="{{q}}" placeholder="Search for something good..." class="input"></label><label><span class="sr-only">Product category</span><select name="category" class="input"><option value="">All categories</option>{% for cat in categories %}<option value="{{cat.id}}" {% if category == (cat.id|string) %}selected{% endif %}>{{cat.name}}</option>{% endfor %}</select></label><button class="btn btn-dark" type="submit">Search <span aria-hidden="true">↗</span></button></form>
+<div class="category-pills"><a href="/" class="category-pill {% if not category and not q %}selected{% endif %}">All objects</a>{% for cat in categories %}<a class="category-pill {% if category == (cat.id|string) %}selected{% endif %}" href="/?category={{cat.id}}">{{cat.name}}</a>{% endfor %}</div>
+<div class="productgrid">{% for p in products %}<article class="productcard" data-reveal data-tilt-card>
+  <a href="/products/{{p.id}}" class="productimage product-photo" aria-label="View {{p.name}}"><div class="product-image-inner"><img class="fallback-product" src="{{p.fallback_url}}" alt="" loading="eager">{% if p.photo_url %}<img class="real-product" data-remote-photo src="{{p.photo_url}}" alt="Demo photograph representing {{p.name}}" loading="lazy" decoding="async">{% endif %}</div><span class="product-chip">{{p.category}}</span><span class="product-arrow" aria-hidden="true">↗</span></a>
+  <div class="productbody"><div class="product-meta">NO. {{'%03d' % p.id}} <span class="product-meta-dot">•</span> {% if p.stock %}{{p.stock}} IN STOCK{% else %}SOLD OUT{% endif %}</div><a href="/products/{{p.id}}" class="productname">{{p.name}}</a><p>{{p.description}}</p><div class="product-bottom"><strong>{{p.price_cents|money}}</strong><a href="/products/{{p.id}}" class="product-details">Discover <span aria-hidden="true">↗</span></a></div></div>
+</article>{% else %}<div class="empty"><h3>No matching products</h3><p>Try a different search or category.</p><a class="btn btn-outline" href="/">Clear filters</a></div>{% endfor %}</div>
+{% if pages > 1 %}<div class="pagination">{% if page_no > 1 %}<a class="btn btn-outline" href="/?q={{q|urlencode}}&category={{category}}&page={{page_no-1}}">Previous</a>{% endif %}<span>Page {{page_no}} of {{pages}}</span>{% if page_no < pages %}<a class="btn btn-outline" href="/?q={{q|urlencode}}&category={{category}}&page={{page_no+1}}">Next</a>{% endif %}</div>{% endif %}
+<section class="closing-banner" data-reveal><div><span class="eyebrow">THE ONLINE SHOP EXPERIENCE</span><h2>Curious looks good<br><em>on you.</em></h2></div><a class="btn btn-lime" href="#catalog">Keep exploring <span aria-hidden="true">↗</span></a><span class="closing-spark" aria-hidden="true">✳</span></section>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Your cart{% endblock %}
+{% block content %}
+<div class="pagehead"><div class="eyebrow muted">CHECK YOUR SELECTION</div><h1>Shopping cart</h1><p>Review products and quantities before placing your order.</p></div>
+{% if items %}
+<div class="twocol">
+<div class="panel"><table class="datatable"><thead><tr><th>Product</th><th>Unit price</th><th>Quantity</th><th>Subtotal</th></tr></thead><tbody>
+{% for item in items %}
+<tr data-cart-row><td><a href="/products/{{item.product_id}}" class="strong">{{item.name}}</a>{% if not item.is_active %}<small class="warning">Unavailable</small>{% endif %}</td>
+<td>{{item.price_cents|money}}</td>
+<td><form class="inline-edit" method="post" action="/cart/update/{{item.product_id}}" data-product-id="{{item.product_id}}">
+<input type="hidden" name="csrf" value="{{csrf}}">
+<input class="input qtysmall" type="number" min="0" max="{{item.stock}}" value="{{item.quantity}}" name="quantity" aria-label="Quantity for {{item.name}}">
+</form><small class="muted">0 to remove</small></td>
+<td class="strong" data-line-subtotal data-unit-cents="{{item.price_cents}}">{{(item.price_cents*item.quantity)|money}}</td></tr>
+{% endfor %}
+</tbody></table></div>
+<aside class="summary"><h3>Order summary</h3><div class="summaryline"><span>Items</span><b data-item-count>{{items|length}}</b></div><div class="summaryline total"><span>Subtotal</span><b data-cart-total>{{total|money}}</b></div>
+<p class="muted small">Shipping calculation is excluded from this classroom demo.</p>
+<p class="small" id="cart-error" role="alert" hidden></p>
+<a href="/checkout" class="btn btn-dark full" id="checkout-link">Proceed to checkout →</a><a href="/" class="btn btn-outline full">Continue shopping</a></aside></div>
+{% else %}<div class="empty"><h3>Your cart is empty</h3><p>Add products to explore the checkout flow.</p><a class="btn btn-dark" href="/">Explore products →</a></div>{% endif %}
+{% endblock %}
