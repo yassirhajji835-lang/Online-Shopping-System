@@ -1,0 +1,23 @@
+# FREE CLASSROOM DEMO ONLY. SQLite at /tmp is disposable: it resets on
+# Render spin-down, restart, or redeploy. Never enter real customer data.
+services:
+  - type: web
+    name: yassir-online-shopping-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: SHOP_RENDER_DEMO
+        value: "1"
+      - key: SHOP_DB
+        value: /tmp/shop.sqlite3
+      - key: SHOP_HTTPS
+        value: "1"
+      - key: SHOP_SECRET
+        generateValue: true
+      - key: SHOP_ADMIN_EMAIL
+        sync: false
+      - key: SHOP_ADMIN_PASSWORD
+        sync: false

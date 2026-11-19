@@ -40,8 +40,26 @@ if not SECRET:
         try: secret_path.chmod(0o600)
         except OSError: pass
 signer = URLSafeTimedSerializer(SECRET, salt="onlineshop-session-v1")
+def validate_render_demo_settings():
+    """Fail closed if a publicly reachable Render demo lacks safe credentials."""
+    if os.getenv("SHOP_RENDER_DEMO") != "1":
+        return
+    email = os.getenv("SHOP_ADMIN_EMAIL", "").strip()
+    password = os.getenv("SHOP_ADMIN_PASSWORD", "")
+    signing_secret = os.getenv("SHOP_SECRET", "")
+    if not email or "@" not in email or email.lower() == "admin@demo.shop":
+        raise RuntimeError("Render demo requires a custom SHOP_ADMIN_EMAIL.")
+    if len(password) < 12 or password == "DemoAdmin123!":
+        raise RuntimeError("Render demo requires a unique SHOP_ADMIN_PASSWORD (at least 12 characters).")
+    if len(signing_secret) < 32:
+        raise RuntimeError("Render demo requires SHOP_SECRET (32+ characters).")
+    if os.getenv("SHOP_HTTPS") != "1":
+        raise RuntimeError("Render demo requires SHOP_HTTPS=1 for secure login cookies.")
+
+
 @asynccontextmanager
 async def lifespan(application: FastAPI):
+    validate_render_demo_settings()
     init_db(seed=True)
     yield
 

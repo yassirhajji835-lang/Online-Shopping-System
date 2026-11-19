@@ -1,3 +1,5 @@
+> **Free Render demo:** The repository includes a `render.yaml` Blueprint for a free web service with **temporary SQLite storage**. All online accounts, orders, cart contents and stock changes disappear after spin-down, restart or redeploy. Use fake test data only. See [Render deployment guide](docs/RENDER_FREE_DEMO.md).
+
 > **2026 visual upgrade:** New premium storefront, demo photos, CSS 3D/parallax, product image gallery, responsive layout, and offline illustrations. See [README_VISUAL_UPGRADE.md](README_VISUAL_UPGRADE.md).
 
 # Online Shopping System — Software Design / Project Training

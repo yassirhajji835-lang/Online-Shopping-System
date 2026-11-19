@@ -5,3 +5,13 @@ shop.sqlite3
 .session_secret
 .env
 *.log
+
+# Local databases, journals and environment files never belong in Git.
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+.venv/
+venv/
+.env.*
+.DS_Store
