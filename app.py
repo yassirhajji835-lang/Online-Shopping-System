@@ -6,6 +6,8 @@ Only a simulated Cash on Delivery checkout is implemented.
 """
 from __future__ import annotations
 
+import csv
+import io
 import hashlib
 import hmac
 import os
@@ -20,7 +22,7 @@ from typing import Optional
 from urllib.parse import quote
 
 from fastapi import FastAPI, Form, Request, Header, HTTPException, Query
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
@@ -183,6 +185,8 @@ def init_db(seed: bool = True):
         CREATE INDEX IF NOT EXISTS ix_products_category ON products(category_id);
         CREATE INDEX IF NOT EXISTS ix_orders_user ON orders(user_id);
         """)
+        if 'is_active' not in {row['name'] for row in db.execute('PRAGMA table_info(users)')}:
+            db.execute('ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0,1))')
         if seed:
             for cat in CATEGORIES:
                 db.execute("INSERT OR IGNORE INTO categories(name) VALUES (?)", (cat,))
@@ -226,7 +230,7 @@ def current_user(request: Request):
     except (BadSignature, SignatureExpired):
         return None
     with connect() as db:
-        u = db.execute("SELECT id,name,email,role FROM users WHERE id=?", (data.get("uid"),)).fetchone()
+        u = db.execute("SELECT id,name,email,role FROM users WHERE id=? AND is_active=1", (data.get("uid"),)).fetchone()
     return dict(u) if u else None
 
 
@@ -344,7 +348,7 @@ def login(request: Request, email: str = Form(""), password: str = Form(""), csr
     if bad := csrf_or_fail(request, csrf): return bad
     with connect() as db:
         u = db.execute("SELECT * FROM users WHERE email=?", (email.strip().lower(),)).fetchone()
-    if not u or not verify_password(password, u["password_hash"]):
+    if not u or not u["is_active"] or not verify_password(password, u["password_hash"]):
         return fail(request, "Email or password is incorrect.", 401)
     token = signer.dumps({"uid": u["id"], "csrf": secrets.token_urlsafe(32)})
     resp = redirect("/admin" if u["role"] == "admin" else "/", notice="Signed in successfully.")
@@ -502,6 +506,64 @@ def admin(request: Request, notice: str = "", error: str = ""):
         totals = {k: db.execute(q).fetchone()[0] for k, q in {
           "products": "SELECT COUNT(*) FROM products", "orders": "SELECT COUNT(*) FROM orders", "pending": "SELECT COUNT(*) FROM orders WHERE status='Pending'", "customers": "SELECT COUNT(*) FROM users WHERE role='customer'"}.items()}
     return render(request, "admin.html", totals=totals, notice=notice, error=error)
+
+
+def managed_users(q=""):
+    pattern = "%" + q.strip()[:120] + "%"
+    with connect() as db:
+        return [dict(row) for row in db.execute(
+            """SELECT u.id,u.name,u.email,u.role,u.created_at,u.is_active,
+            (SELECT COUNT(*) FROM orders o WHERE o.user_id=u.id) AS order_count
+            FROM users u WHERE u.name LIKE ? OR u.email LIKE ?
+            ORDER BY u.id DESC""", (pattern, pattern))]
+
+
+@app.get("/admin/users")
+def admin_users(request: Request, q: str = "", notice: str = "", error: str = ""):
+    if not user_or_redirect(request, "admin"): return fail(request, "Administrator access required.", 403)
+    return render(request, "admin_users.html", users=managed_users(q), q=q[:120], notice=notice, error=error)
+
+
+@app.get("/admin/users/export")
+def admin_users_export(request: Request, q: str = ""):
+    if not user_or_redirect(request, "admin"): return fail(request, "Administrator access required.", 403)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    fields = ["id","name","email","role","created_at","is_active","order_count"]
+    writer.writerow(fields)
+    def safe(value):
+        value = str(value)
+        return "'" + value if value.lstrip().startswith(("=", "+", "-", "@")) or value.startswith(("\t","\r","\n")) else value
+    for row in managed_users(q):
+        writer.writerow([safe(row[field]) for field in fields])
+    return Response(output.getvalue(), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=users.csv", "Cache-Control": "no-store"})
+
+
+@app.get("/admin/users/{user_id}/orders")
+def admin_user_orders(request: Request, user_id: int):
+    if not user_or_redirect(request, "admin"): return fail(request, "Administrator access required.", 403)
+    with connect() as db:
+        account = db.execute("SELECT id,name,email FROM users WHERE id=?", (user_id,)).fetchone()
+        if not account: return fail(request, "User not found.", 404)
+        rows = db.execute("SELECT id,total_cents,status,created_at FROM orders WHERE user_id=? ORDER BY id DESC", (user_id,)).fetchall()
+    return render(request, "admin_user_orders.html", account=account, orders=rows)
+
+
+@app.post("/admin/users/{user_id}/status")
+def admin_user_status(request: Request, user_id: int, active: int = Form(...), csrf: str = Form("")):
+    if not user_or_redirect(request, "admin"): return fail(request, "Administrator access required.", 403)
+    if bad := csrf_or_fail(request, csrf): return bad
+    if active not in (0,1): return fail(request, "Invalid account status.")
+    with connect() as db:
+        result = db.execute("UPDATE users SET is_active=? WHERE id=? AND role='customer'", (active,user_id))
+        if not result.rowcount: return fail(request, "Only customer accounts can be changed.", 403)
+    return redirect("/admin/users", notice="Customer status updated.")
+
+
+@app.get("/api/v1/admin/users", tags=["JSON API - Admin"])
+def api_admin_users(request: Request, q: str = ""):
+    api_user(request, "admin")
+    return JSONResponse({"users": managed_users(q)}, headers={"Cache-Control":"no-store"})
 
 
 @app.get("/admin/products")
