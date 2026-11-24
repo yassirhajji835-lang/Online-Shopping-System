@@ -248,3 +248,28 @@ def test_json_api_order_ownership_and_admin_status_changes(client):
     assert client.patch(f'/api/v1/admin/orders/{oid}/status',json={'status':'Cancelled'},headers=headers).status_code == 409
     with shop.connect() as db:
         assert db.execute('SELECT stock FROM products WHERE id=?',(pid,)).fetchone()[0] == original
+
+
+def test_user_management(client):
+    assert client.get("/admin/users").status_code == 403
+    register(client, "New Buyer", "new@example.com")
+    login(client, "new@example.com", "password123")
+    assert client.get("/api/v1/admin/users").status_code == 403
+    logout(client)
+    login(client, "admin@demo.shop", "DemoAdmin123!")
+    page = client.get("/admin/users?q=New+Buyer")
+    assert page.status_code == 200 and "new@example.com" in page.text
+    rows = client.get("/api/v1/admin/users?q=New+Buyer").json()["users"]
+    assert len(rows) == 1 and "password_hash" not in rows[0]
+    uid = rows[0]["id"]
+    assert client.get("/admin/users/export").status_code == 200
+    assert client.get(f"/admin/users/{uid}/orders").status_code == 200
+    assert client.post(f"/admin/users/{uid}/status", data={"active":0,"csrf":"bad"}).status_code == 403
+    assert client.post(f"/admin/users/{uid}/status", data={"active":0,"csrf":csrf_from(page)}).status_code == 200
+    logout(client)
+    assert login(client, "new@example.com", "password123").status_code == 401
+    login(client, "admin@demo.shop", "DemoAdmin123!")
+    page = client.get("/admin/users")
+    assert client.post(f"/admin/users/{uid}/status", data={"active":1,"csrf":csrf_from(page)}).status_code == 200
+    logout(client)
+    assert login(client, "new@example.com", "password123").status_code == 200
