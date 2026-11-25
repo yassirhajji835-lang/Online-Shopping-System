@@ -263,8 +263,8 @@ def render(request: Request, page: str, **context):
     user = current_user(request)
     csrf = get_csrf(request)
     response = templates.TemplateResponse(request, page, {"user": user, "csrf": csrf, **context})
-    if not request.cookies.get("shop_session") and not request.cookies.get("shop_guest_csrf"):
-        response.set_cookie("shop_guest_csrf", signer.dumps({"csrf": csrf}), httponly=True, samesite="lax", max_age=43200)
+    if not user:
+        response.set_cookie("shop_guest_csrf", signer.dumps({"csrf": csrf}), httponly=True, samesite="lax", secure=os.getenv("SHOP_HTTPS", "0") == "1", max_age=43200)
     return response
 
 
@@ -460,7 +460,7 @@ def checkout(request: Request, recipient: str = Form(""), phone: str = Form(""),
     u = user_or_redirect(request, "customer")
     if not u: return redirect("/login")
     recipient, phone, address = recipient.strip(), phone.strip(), address.strip()
-    if not (2 <= len(recipient) <= 100 and 5 <= len(phone) <= 30 and 8 <= len(address) <= 400):
+    if not (2 <= len(recipient) <= 100 and 5 <= len(phone) <= 30 and sum(c.isdecimal() for c in phone) >= 5 and all(c.isdecimal() or c in "+- ()." for c in phone) and 8 <= len(address) <= 400):
         return fail(request, "Please fill in recipient name, phone and delivery address.")
     with connect() as db:
         try:
