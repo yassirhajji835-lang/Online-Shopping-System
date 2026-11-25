@@ -512,7 +512,13 @@ def admin(request: Request, notice: str = "", error: str = ""):
     with connect() as db:
         totals = {k: db.execute(q).fetchone()[0] for k, q in {
           "products": "SELECT COUNT(*) FROM products", "orders": "SELECT COUNT(*) FROM orders", "pending": "SELECT COUNT(*) FROM orders WHERE status='Pending'", "customers": "SELECT COUNT(*) FROM users WHERE role='customer'"}.items()}
-    return render(request, "admin.html", totals=totals, notice=notice, error=error)
+        totals["low_stock"] = db.execute("SELECT COUNT(*) FROM products WHERE is_active=1 AND stock<=5").fetchone()[0]
+        totals["delivered_value"] = db.execute("SELECT COALESCE(SUM(total_cents),0) FROM orders WHERE status='Delivered'").fetchone()[0]
+        recent = db.execute("SELECT o.id,o.total_cents,o.status,o.created_at,u.name AS customer FROM orders o JOIN users u ON u.id=o.user_id ORDER BY o.id DESC LIMIT 6").fetchall()
+        inventory = db.execute("SELECT id,name,stock FROM products WHERE is_active=1 AND stock<=5 ORDER BY stock,id LIMIT 5").fetchall()
+        counts = {row["status"]: row["n"] for row in db.execute("SELECT status,COUNT(*) AS n FROM orders GROUP BY status")}
+        breakdown = [{"label": status, "count": counts.get(status,0), "percent": round(100*counts.get(status,0)/max(1,totals["orders"]))} for status in STATUS_NEXT]
+    return render(request, "admin.html", totals=totals, recent=recent, inventory=inventory, breakdown=breakdown, notice=notice, error=error)
 
 
 def managed_users(q=""):
