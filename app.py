@@ -130,8 +130,14 @@ def with_visual(product):
     p["fallback_url"] = f"/static/illustrations/{key}.svg"
     return p
 
+from postgres_backend import postgres_connect, database_url, DB_ERRORS, INTEGRITY_ERRORS
+
 @contextmanager
 def connect():
+    if database_url():
+        with postgres_connect() as db:
+            yield db
+        return
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(DB_PATH), timeout=15, isolation_level=None)
     conn.row_factory = sqlite3.Row
@@ -334,7 +340,7 @@ def register(request: Request, name: str = Form(""), email: str = Form(""), pass
     with connect() as db:
         try:
             db.execute("INSERT INTO users(name,email,password_hash,role) VALUES (?,?,?,'customer')", (name, email, hash_password(password)))
-        except sqlite3.IntegrityError:
+        except INTEGRITY_ERRORS:
             return fail(request, "That email is already registered.")
     return redirect("/login", notice="Account created. Please sign in.")
 
@@ -471,7 +477,7 @@ def checkout(request: Request, recipient: str = Form(""), phone: str = Form(""),
                 db.execute("INSERT INTO order_items(order_id,product_id,quantity,unit_price_cents) VALUES (?,?,?,?)", (oid, it["product_id"], it["quantity"], it["price_cents"]))
             db.execute("DELETE FROM cart_items WHERE user_id=?", (u["id"],))
             db.execute("COMMIT")
-        except (sqlite3.Error, ValueError) as exc:
+        except (*DB_ERRORS, ValueError) as exc:
             db.execute("ROLLBACK")
             return fail(request, str(exc) if isinstance(exc, ValueError) else "Could not place order. Try again.", 400)
     return redirect(f"/orders/{oid}", notice="Order placed. Payment is simulated (Cash on Delivery).")
@@ -583,7 +589,7 @@ def admin_category_add(request: Request, name: str = Form(""), csrf: str = Form(
     if not 2 <= len(name) <= 80: return fail(request, "Category name must be 2–80 characters.")
     with connect() as db:
         try: db.execute("INSERT INTO categories(name) VALUES (?)", (name,))
-        except sqlite3.IntegrityError: return fail(request, "This category already exists.")
+        except INTEGRITY_ERRORS: return fail(request, "This category already exists.")
     return redirect("/admin/products", notice="Category added.")
 
 
@@ -595,7 +601,7 @@ def admin_category_rename(request: Request, cid: int, name: str = Form(""), csrf
     if not 2 <= len(name) <= 80: return fail(request, "Category name must be 2–80 characters.")
     with connect() as db:
         try: db.execute("UPDATE categories SET name=? WHERE id=?", (name, cid))
-        except sqlite3.IntegrityError: return fail(request, "This category already exists.")
+        except INTEGRITY_ERRORS: return fail(request, "This category already exists.")
     return redirect("/admin/products", notice="Category renamed.")
 
 
@@ -659,7 +665,7 @@ def admin_order_status(request: Request, oid: int, status: str = Form(""), csrf:
                     db.execute("UPDATE products SET stock=stock+? WHERE id=?", (item["quantity"], item["product_id"]))
             db.execute("UPDATE orders SET status=? WHERE id=?", (status, oid))
             db.execute("COMMIT")
-        except (sqlite3.Error, ValueError) as exc:
+        except (*DB_ERRORS, ValueError) as exc:
             db.execute("ROLLBACK")
             return fail(request, str(exc) if isinstance(exc, ValueError) else "Could not update order status.")
     return redirect(f"/orders/{oid}", notice=f"Order moved to {status}.")
@@ -859,7 +865,7 @@ def api_change_order_status(request: Request, order_id: int, payload: APIOrderSt
         except HTTPException:
             db.execute("ROLLBACK")
             raise
-        except sqlite3.Error:
+        except DB_ERRORS:
             db.execute("ROLLBACK")
             raise HTTPException(status_code=500, detail="Order update failed")
     return {"order_id": order_id, "status": payload.status}
@@ -867,7 +873,7 @@ def api_change_order_status(request: Request, order_id: int, payload: APIOrderSt
 @app.get("/health")
 def health():
     with connect() as db: db.execute("SELECT 1").fetchone()
-    return {"status": "ok", "system": "Online Shopping System", "storage": "SQLite"}
+    return {"status": "ok", "system": "Online Shopping System", "storage": "PostgreSQL" if database_url() else "SQLite"}
 
 
 if __name__ == "__main__":
