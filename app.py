@@ -202,7 +202,7 @@ def init_db(seed: bool = True):
                     cid = db.execute("SELECT id FROM categories WHERE name=?", (category,)).fetchone()[0]
                     db.execute("INSERT INTO products(category_id,name,description,price_cents,stock,image_url) VALUES (?,?,?,?,?,?)", (cid, name, desc, cents, stock, emoji))
             # This fixed demo account is LOCAL ONLY; change before any deployment.
-            email = os.getenv("SHOP_ADMIN_EMAIL", "admin@demo.shop")
+            email = os.getenv("SHOP_ADMIN_EMAIL", "admin@demo.shop").strip().lower()
             password = os.getenv("SHOP_ADMIN_PASSWORD", "DemoAdmin123!")
             if not db.execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone():
                 db.execute("INSERT INTO users(name,email,password_hash,role) VALUES (?,?,?,'admin')", ("Demo Administrator", email, hash_password(password)))
@@ -293,7 +293,7 @@ def csrf_or_fail(request: Request, csrf: str):
 def valid_int(value: str, minimum: int = 0) -> int | None:
     try:
         num = int(value)
-        return num if str(num) == str(value).strip() and num >= minimum else None
+        return num if str(num) == str(value).strip() and minimum <= num <= 2147483647 else None
     except (ValueError, TypeError): return None
 
 
@@ -301,7 +301,7 @@ def price_to_cents(value: str) -> int | None:
     try:
         v = Decimal(value)
         if not v.is_finite() or v < 0 or v.as_tuple().exponent < -2: return None
-        return int(v * 100)
+        return int(v * 100) if v <= Decimal("21474836.47") else None
     except (InvalidOperation, ValueError): return None
 
 
@@ -335,7 +335,7 @@ def register_page(request: Request): return render(request, "auth.html", mode="r
 def register(request: Request, name: str = Form(""), email: str = Form(""), password: str = Form(""), csrf: str = Form("")):
     if bad := csrf_or_fail(request, csrf): return bad
     name, email = name.strip(), email.strip().lower()
-    if not (2 <= len(name) <= 70 and 3 <= len(email) <= 130 and "@" in email and "." in email.split("@")[-1] and len(password) >= 8):
+    if not (2 <= len(name) <= 70 and 3 <= len(email) <= 130 and "@" in email and "." in email.split("@")[-1] and 8 <= len(password) <= 128):
         return fail(request, "Provide a name (2–70 characters), valid email and password (at least 8 characters).")
     with connect() as db:
         try:
@@ -431,12 +431,13 @@ def cart_quantity_ajax(request: Request, product_id: int, quantity: str = Form("
     if qty is None:
         return JSONResponse({"error": "Enter a valid quantity."}, status_code=422)
     with connect() as db:
+        if qty == 0:
+            db.execute("DELETE FROM cart_items WHERE user_id=? AND product_id=?", (u["id"], product_id))
+            return {"ok": True, "quantity": 0}
         p = db.execute("SELECT stock,is_active FROM products WHERE id=?", (product_id,)).fetchone()
         if not p or not p["is_active"] or qty > p["stock"]:
             return JSONResponse({"error": "Quantity exceeds available stock."}, status_code=409)
-        if qty == 0:
-            db.execute("DELETE FROM cart_items WHERE user_id=? AND product_id=?", (u["id"], product_id))
-        else:
+        if qty > 0:
             existing = db.execute("SELECT 1 FROM cart_items WHERE user_id=? AND product_id=?", (u["id"], product_id)).fetchone()
             if not existing:
                 return JSONResponse({"error": "Item is no longer in your cart."}, status_code=404)
